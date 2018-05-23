@@ -1,0 +1,116 @@
+import Service from '@ember/service';
+import { computed, get } from '@ember/object';
+import config from 'ember-js-auth/config/environment';
+import { isPresent } from '@ember/utils';
+
+export default Service.extend({
+
+  /**
+   * Configure our auth0 instance
+   */
+  auth0: computed(function () {
+    return new auth0.WebAuth({
+      domain: config.auth0.domain, // domain from auth0
+      clientID: config.auth0.clientId, // clientId from auth0
+      redirectUri: 'http://localhost:4200/callback',
+      audience: `https://${config.auth0.domain}/userinfo`,
+      responseType: 'token id_token',
+      scope: 'openid profile' // adding profile because we want username, given_name, etc
+    });
+  }),
+
+  /**
+   * Send a user over to the hosted auth0 login page
+   */
+  login() {
+    get(this, 'auth0').authorize();
+
+  },
+
+  /**
+   * When a user lands back on our application
+   * Parse the hash and store access_token, id_token, expires_at in localStorage
+   */
+  handleAuthentication() {
+    return new Promise((resolve, reject) => {
+      this.get('auth0').parseHash((err, authResult) => {
+        if (authResult && authResult.accessToken && authResult.idToken) {
+
+          // store magic stuff into localStorage
+          this.setSession(authResult);
+        } else if (err) {
+          return reject(err);
+        }
+
+        return resolve();
+      });
+    });
+  },
+
+  /**
+   * Use our access_token to hit the auth0 API to get a user's information
+   * If you want more information, add to the scopes when configuring auth.WebAuth({ })
+   */
+  getUserInfo() {
+    return new Promise((resolve, reject) => {
+      const accessToken = localStorage.getItem('access_token');
+      if (!accessToken) return reject();
+
+      return this
+        .get('auth0')
+        .client
+        .userInfo(accessToken, (err, profile) => resolve(profile))
+    });
+  },
+
+  /**
+   * Computed to tell if a user is logged in or not
+   * @return boolean
+   */
+  isAuthenticated: computed(function() {
+    return isPresent(this.getSession().access_token) && this.isNotExpired();
+  }).volatile(),
+
+  /**
+   * Returns all necessary authentication parts
+   */
+  getSession() {
+    return {
+      access_token: localStorage.getItem('access_token'),
+      id_token: localStorage.getItem('id_token'),
+      expires_at: localStorage.getItem('expires_at')
+    };
+  },
+
+  /**
+   * Store everything we need in localStorage to authenticate this user
+   */
+  setSession(authResult) {
+    if (authResult && authResult.accessToken && authResult.idToken) {
+      // Set the time that the access token will expire at
+      let expiresAt = JSON.stringify((authResult.expiresIn * 1000) + new Date().getTime());
+      localStorage.setItem('access_token', authResult.accessToken);
+      localStorage.setItem('id_token', authResult.idToken);
+      localStorage.setItem('expires_at', expiresAt);
+      window.location.replace('/dashboard')
+    }
+  },
+
+  /**
+   * Get rid of everything in localStorage that identifies this user
+   */
+  logout() {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('id_token');
+    localStorage.removeItem('expires_at');
+    window.location.replace('/')
+  },
+
+  /**
+   * Check whether the current time is past the access token's expiry time
+   */
+  isNotExpired() {
+    const expiresAt = this.getSession().expires_at;
+    return new Date().getTime() < expiresAt;
+  }
+});
