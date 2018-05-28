@@ -13,7 +13,7 @@ export default Component.extend({
     },
     
     /**
-   * From service/auth, removing all the save tokens from the session.
+   * From service/auth, removing the saved token from the session.
    */
     logout() {
       this.get('auth').logout();

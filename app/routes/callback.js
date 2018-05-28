@@ -8,7 +8,7 @@ export default Route.extend({
     const auth = get(this, 'auth');
 
     auth
-      .handleAuthentication() // stores access_token, id_token, expires_at in localStorage
+      .handleAuthentication() // stores access_token and expires_at in localStorage
       .then(() => {
         this.transitionTo('/dashboard');
       });

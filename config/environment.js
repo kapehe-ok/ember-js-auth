@@ -9,7 +9,7 @@ module.exports = function (environment) {
     EmberENV: {
       FEATURES: {
         // Here you can enable experimental features on an ember canary build
-        // e.g. 'w ith-controller': true
+        // e.g. 'with-controller': true
         'ds-improved-ajax': true,
       },
       EXTEND_PROTOTYPES: {
