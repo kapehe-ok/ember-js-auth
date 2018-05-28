@@ -30,14 +30,14 @@ export default Service.extend({
 
   /**
    * When a user lands back on our application
-   * Parse the hash and store access_token and expires_at in localStorage
+   * Parse the hash and store access_token and expires_at in sessionStorage
    */
   handleAuthentication() {
     return new Promise((resolve, reject) => {
       this.get('auth0').parseHash((err, authResult) => {
         if (authResult && authResult.accessToken) {
 
-          // store magic stuff into localStorage
+          // store magic stuff into sessionStorage
           this.setSession(authResult);
         } else if (err) {
           return reject(err);
@@ -54,7 +54,7 @@ export default Service.extend({
    */
   getUserInfo() {
     return new Promise((resolve, reject) => {
-      const accessToken = localStorage.getItem('access_token');
+      const accessToken = sessionStorage.getItem('access_token');
       if (!accessToken) return reject();
 
       return this
@@ -77,30 +77,30 @@ export default Service.extend({
    */
   getSession() {
     return {
-      access_token: localStorage.getItem('access_token'),
-      expires_at: localStorage.getItem('expires_at')
+      access_token: sessionStorage.getItem('access_token'),
+      expires_at: sessionStorage.getItem('expires_at')
     };
   },
 
   /**
-   * Store everything we need in localStorage to authenticate this user
+   * Store everything we need in sessionStorage to authenticate this user
    */
   setSession(authResult) {
     if (authResult && authResult.accessToken) {
       // Set the time that the access token will expire at
       let expiresAt = JSON.stringify((authResult.expiresIn * 1000) + new Date().getTime());
-      localStorage.setItem('access_token', authResult.accessToken);
-      localStorage.setItem('expires_at', expiresAt);
+      sessionStorage.setItem('access_token', authResult.accessToken);
+      sessionStorage.setItem('expires_at', expiresAt);
       window.location.replace('/dashboard')
     }
   },
 
   /**
-   * Get rid of everything in localStorage that identifies this user
+   * Get rid of everything in sessionStorage that identifies this user
    */
   logout() {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('expires_at');
+    sessionStorage.removeItem('access_token');
+    sessionStorage.removeItem('expires_at');
     window.location.replace('/')
   },
 
