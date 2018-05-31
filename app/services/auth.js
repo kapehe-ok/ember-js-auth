@@ -1,10 +1,9 @@
 import Service from '@ember/service';
-import { computed, get } from '@ember/object';
+import { computed } from '@ember/object';
 import config from 'ember-js-auth/config/environment';
-import { isPresent } from '@ember/utils';
 
 export default Service.extend({
-
+  
   /**
    * Configure our auth0 instance
    */
@@ -24,23 +23,20 @@ export default Service.extend({
    * Send a user over to the hosted auth0 login page
    */
   login() {
-    get(this, 'auth0').authorize();
-
+    this.get('auth0').authorize();
   },
 
   /**
    * When a user lands back on our application
-   * Parse the hash and store access_token and expires_at in sessionStorage
+   * Parse the hash and store user info
    */
   handleAuthentication() {
     return new Promise((resolve, reject) => {
       this.get('auth0').parseHash((err, authResult) => {
+        if (err) return false;
+        
         if (authResult && authResult.accessToken) {
-
-          // store magic stuff into sessionStorage
-          this.setSession(authResult);
-        } else if (err) {
-          return reject(err);
+          this.setUser(authResult.accessToken);
         }
 
         return resolve();
@@ -49,66 +45,43 @@ export default Service.extend({
   },
 
   /**
-   * Use our access_token to hit the auth0 API to get a user's information
-   * If you want more information, add to the scopes when configuring auth.WebAuth({ })
-   */
-  getUserInfo() {
-    return new Promise((resolve, reject) => {
-      const accessToken = sessionStorage.getItem('access_token');
-      if (!accessToken) return reject();
-
-      return this
-        .get('auth0')
-        .client
-        .userInfo(accessToken, (err, profile) => resolve(profile))
-    });
-  },
-
-  /**
    * Computed to tell if a user is logged in or not
    * @return boolean
    */
-  isAuthenticated: computed(function() {
-    return isPresent(this.getSession().access_token) && this.isNotExpired();
-  }),
+  isAuthenticated: computed(function() {    
+    return this.get('checkLogin');
+  }), 
 
   /**
-   * Returns all necessary authentication parts
+   * Use the token to set our user
    */
-  getSession() {
-    return {
-      access_token: sessionStorage.getItem('access_token'),
-      expires_at: sessionStorage.getItem('expires_at')
-    };
+  setUser(token) {
+    // once we have a token, we are able to go get the users information
+    this.get('auth0')
+      .client
+      .userInfo(token, (err, profile) => this.set('user', profile))
   },
 
   /**
-   * Store everything we need in sessionStorage to authenticate this user
+   * Check if we are authenticated using the auth0 library's checkSession
    */
-  setSession(authResult) {
-    if (authResult && authResult.accessToken) {
-      // Set the time that the access token will expire at
-      let expiresAt = JSON.stringify((authResult.expiresIn * 1000) + new Date().getTime());
-      sessionStorage.setItem('access_token', authResult.accessToken);
-      sessionStorage.setItem('expires_at', expiresAt);
-      window.location.replace('/dashboard')
-    }
-  },
+  checkLogin() {
+    const self = this;
+
+    // check to see if a user is authenticated, we'll get a token back
+    this.get('auth0')
+      .checkSession({}, (err, authResult) => {
+        // if we are wrong, stop everything now
+        if (err) return err;
+        this.setUser(authResult.accessToken);
+      });
+  }, 
 
   /**
    * Get rid of everything in sessionStorage that identifies this user
    */
   logout() {
-    sessionStorage.removeItem('access_token');
-    sessionStorage.removeItem('expires_at');
-    window.location.replace('/')
-  },
-
-  /**
-   * Check whether the current time is past the access token's expiry time
-   */
-  isNotExpired() {
-    const expiresAt = this.getSession().expires_at;
-    return new Date().getTime() < expiresAt;
+    this.set('user', null);
+    return Promise.resolve(true);
   }
 });

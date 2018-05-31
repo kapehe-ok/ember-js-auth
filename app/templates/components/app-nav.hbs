@@ -1,18 +1,24 @@
 <nav class="navbar is-danger">
   <div class="navbar-brand">
-    <a class="navbar-item" href="/dashboard">
+    <a class="navbar-item" {{ action "goHome" }}>
       <p width="112" height="28">Bank Home</p>
     </a>
   </div>
 
   <div class="navbar-menu">
     <div class="navbar-start">
+        
     </div>
 
     <div class="navbar-end">
-      {{#if user}}
-      <a class="navbar-item">{{user.given_name}} {{isAuthenticated}}</a>
-      <button {{ action "logout" }} class="button is-primary">Log out</button>
+      {{#if auth.user}}
+        <a class="navbar-item">{{ auth.user.name }}</a>
+
+        <a class="navbar-item" {{ action "goDashboard" }}>
+          Dashboard
+        </a>
+
+        <button {{ action "logout" }} class="button is-primary">Log out</button>
       {{ else }}
 
       <p class="control">

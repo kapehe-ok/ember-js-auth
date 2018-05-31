@@ -5,12 +5,11 @@ import { get } from '@ember/object';
 export default Route.extend({
   auth: service('auth'),
   beforeModel() {
-    const auth = get(this, 'auth');
-
-    auth
-      .handleAuthentication() // stores access_token and expires_at in sessionStorage
-      .then(() => {
-        this.transitionTo('/dashboard');
-      });
+    // check if we are authenticated
+    // parse the url hash that comes back from auth0
+    // if authenticated on login, redirect to the dashboard
+    get(this, 'auth')
+      .handleAuthentication()
+      .then(() => this.transitionTo('/dashboard'));
   },
 });
