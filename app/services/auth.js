@@ -31,7 +31,7 @@ export default Service.extend({
    * Parse the hash and store user info
    */
   handleAuthentication() {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       this.get('auth0').parseHash((err, authResult) => {
         if (err) return false;
         
@@ -66,8 +66,6 @@ export default Service.extend({
    * Check if we are authenticated using the auth0 library's checkSession
    */
   checkLogin() {
-    const self = this;
-
     // check to see if a user is authenticated, we'll get a token back
     this.get('auth0')
       .checkSession({}, (err, authResult) => {
