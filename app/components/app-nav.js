@@ -28,7 +28,6 @@ export default Component.extend({
       this
         .get('auth')
         .logout()  
-        .then(() => this.get('router').transitionTo('home'));
     }
   }
 });
