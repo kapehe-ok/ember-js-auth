@@ -45,7 +45,7 @@ Make use of the many generators for code, try `ember help generate` for more det
 
 ### Auth0 Variables
 
-In the `config` folder, create an `auth0-variables.js` file. The content in that file will have your auth0 logic from ![Auth0.com](https://auth0.com/).
+In the `config` folder, create an `auth0-variables.js` file. The content in that file will have your auth0 logic from [Auth0.com](https://auth0.com/).
 
 ```javascript
 //ember-js-auth/config/auth0-variables.js
